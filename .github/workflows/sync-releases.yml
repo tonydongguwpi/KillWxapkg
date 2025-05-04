@@ -1,25 +1,14 @@
-name: Sync Upstream Releases
+- name: Sync Assets via API
+  run: |
+    # 获取上游 Release 信息
+    UPSTREAM_REPO="Ackites/KillWxapkg"
+    LATEST_RELEASE=$(curl -s "https://api.github.com/repos/$UPSTREAM_REPO/releases/latest")
+    ASSET_URLS=$(echo "$LATEST_RELEASE" | jq -r '.assets[].browser_download_url')
 
-on:
-  schedule:
-    - cron: '0 3 * * *'  # 每天 UTC 时间 3 点同步一次
-  workflow_dispatch:     # 支持手动触发
-
-jobs:
-  sync-releases:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Sync Tags
-        run: |
-          git remote add upstream https://github.com/Ackites/KillWxapkg.git
-          git fetch upstream --tags
-          git push origin --tags
-
-      - name: Download and Upload Release Assets
-        uses: dev-drprasad/fetch-upstream-release-assets@v0.2.1
-        with:
-          upstream_repo: "Ackites/KillWxapkg"
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+    # 下载并上传到当前仓库
+    for url in $ASSET_URLS; do
+      wget $url
+      gh release upload latest $(basename $url) --clobber
+    done
+  env:
+    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
