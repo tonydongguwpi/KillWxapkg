@@ -1,0 +1,25 @@
+name: Sync Upstream Releases
+
+on:
+  schedule:
+    - cron: '0 3 * * *'  # 每天 UTC 时间 3 点同步一次
+  workflow_dispatch:     # 支持手动触发
+
+jobs:
+  sync-releases:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Sync Tags
+        run: |
+          git remote add upstream https://github.com/Ackites/KillWxapkg.git
+          git fetch upstream --tags
+          git push origin --tags
+
+      - name: Download and Upload Release Assets
+        uses: dev-drprasad/fetch-upstream-release-assets@v0.2.1
+        with:
+          upstream_repo: "Ackites/KillWxapkg"
+          github_token: ${{ secrets.GITHUB_TOKEN }}
